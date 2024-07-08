@@ -2,4 +2,4 @@ first line
 second line 
 thired line 
 the line num 4
-the line 5 in main branch
+new changes to fix conflict
