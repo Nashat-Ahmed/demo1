@@ -22,19 +22,10 @@ pipeline {
             steps {
                 script {
                     echo 'Building Docker Image...'
-                    sh 'docker build -t your-dockerhub-username/netflix-app:latest .'
+                    sh 'docker build -t nashaat111/netflix-app:latest .'
                 }
             }
-        }
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    echo 'Pushing Docker Image to Registry...'
-                    sh 'docker login -u your-dockerhub-username -p your-dockerhub-password'
-                    sh 'docker push your-dockerhub-username/netflix-app:latest'
-                }
-            }
-        }
+        } 
         stage('Deploy to Kubernetes') {
             steps {
                 script {
