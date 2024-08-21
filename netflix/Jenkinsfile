@@ -2,22 +2,21 @@ pipeline {
     agent any
 
     stages {
-        stage('Install Node.js') {
-            steps {
-                sh '''
-                    sudo apt-get update
-                    sudo apt-get install -y nodejs npm
-                    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
-                    source ~/.nvm/nvm.sh
-                    nvm install node
-                '''
-            }
-        }
         stage('Build') {
+            agent {
+                docker {
+                    image 'node:14'
+                    args '-u root'
+                }
+            }
             steps {
-                sh 'npm install'
+                script {
+                    echo 'Building...'
+                    sh 'npm install'
+                }
             }
         }
+
         stage('Test') {
             steps {
                 script {
@@ -26,6 +25,7 @@ pipeline {
                 }
             }
         }
+
         stage('Docker Build') {
             steps {
                 script {
@@ -33,7 +33,18 @@ pipeline {
                     sh 'docker build -t nashaat111/netflix-app:latest .'
                 }
             }
-        } 
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    echo 'Pushing Docker Image to Registry...'
+                    sh 'docker login -u nashaat111 -p Nashaat123#'
+                    sh 'docker push your-dockerhub-username/netflix-app:latest'
+                }
+            }
+        }
+
         stage('Deploy to Kubernetes') {
             steps {
                 script {
