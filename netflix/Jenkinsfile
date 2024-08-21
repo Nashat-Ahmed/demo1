@@ -6,7 +6,7 @@ pipeline {
             steps {
                 script {
                     echo 'Building...'
-                    sh 'sudo docker run --rm -v "$PWD":/usr/src/app -w /usr/src/app node:14 npm install'
+                    sh 'docker run --rm -v "$PWD":/usr/src/app -w /usr/src/app node:14 npm install'
                 }
             }
         }
@@ -15,7 +15,7 @@ pipeline {
             steps {
                 script {
                     echo 'Running Tests...'
-                    sh 'sudo docker run --rm -v "$PWD":/usr/src/app -w /usr/src/app node:14 npm test'
+                    sh 'docker run --rm -v "$PWD":/usr/src/app -w /usr/src/app node:14 npm test'
                 }
             }
         }
@@ -24,7 +24,7 @@ pipeline {
             steps {
                 script {
                     echo 'Building Docker Image...'
-                    sh 'sudo docker build -t nashaat111/netflix-app:latest .'
+                    sh 'docker build -t nashaat111/netflix-app:latest .'
                 }
             }
         }
@@ -33,8 +33,8 @@ pipeline {
             steps {
                 script {
                     echo 'Pushing Docker Image to Registry...'
-                    sh 'sudo docker login -u nashaat111 -p Nashaat123#'
-                    sh 'sudo docker push your-dockerhub-username/netflix-app:latest'
+                    sh 'docker login -u nashaat111 -p Nashaat123#'
+                    sh 'docker push nashaat111/netflix-app:latest'
                 }
             }
         }
@@ -43,8 +43,8 @@ pipeline {
             steps {
                 script {
                     echo 'Deploying to Kubernetes...'
-                    sh 'sudo kubectl apply -f k8s/deployment.yaml'
-                    sh 'sudo kubectl apply -f k8s/service.yaml'
+                    sh 'kubectl apply -f k8s/deployment.yaml'
+                    sh 'kubectl apply -f k8s/service.yaml'
                 }
             }
         }
