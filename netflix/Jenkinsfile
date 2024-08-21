@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    echo 'Building...'
+                    sh 'npm install'
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                script {
+                    echo 'Running Tests...'
+                    sh 'npm test'
+                }
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                script {
+                    echo 'Building Docker Image...'
+                    sh 'docker build -t your-dockerhub-username/netflix-app:latest .'
+                }
+            }
+        }
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    echo 'Pushing Docker Image to Registry...'
+                    sh 'docker login -u your-dockerhub-username -p your-dockerhub-password'
+                    sh 'docker push your-dockerhub-username/netflix-app:latest'
+                }
+            }
+        }
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    echo 'Deploying to Kubernetes...'
+                    sh 'kubectl apply -f k8s/deployment.yaml'
+                    sh 'kubectl apply -f k8s/service.yaml'
+                }
+            }
+        }
+    }
+}
+

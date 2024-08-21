@@ -1,0 +1,21 @@
+# k8s/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netflix-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: netflix-app
+  template:
+    metadata:
+      labels:
+        app: netflix-app
+    spec:
+      containers:
+      - name: netflix-app
+        image: your-dockerhub-username/netflix-app:latest
+        ports:
+        - containerPort: 3000
+
