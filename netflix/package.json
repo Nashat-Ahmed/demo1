@@ -1,0 +1,19 @@
+{
+    "name": "app",
+    "version": "1.0.0",
+    "description": "A simple Node.js application",
+    "main": "app.js",
+    "scripts": {
+        "start": "node app.js"
+    },
+    "dependencies": {
+        "express": "^4.19.2"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "chai": "^5.1.1",
+        "mocha": "^10.7.3"
+    }
+}
