@@ -6,7 +6,7 @@ pipeline {
             steps {
                 script {
                     echo 'Building...'
-                    sh 'docker run --rm -v "$PWD":/usr/src/app -w /usr/src/app node:14 npm install'
+                    sh 'docker run --rm -v "123":/usr/src/app -w /usr/src/app node:14 npm install'
                 }
             }
         }
@@ -15,7 +15,7 @@ pipeline {
             steps {
                 script {
                     echo 'Running Tests...'
-                    sh 'docker run --rm -v "$PWD":/usr/src/app -w /usr/src/app node:14 npm test'
+                    sh 'docker run --rm -v "123":/usr/src/app -w /usr/src/app node:14 npm test'
                 }
             }
         }
