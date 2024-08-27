@@ -5,7 +5,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Checkout code from the version control system
-                git '[200~https://github.com/Nashat-Ahmed/demo1.git'
+                git 'https://github.com/Nashat-Ahmed/demo1.git'
             }
         }
 
