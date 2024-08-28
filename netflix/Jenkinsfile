@@ -30,7 +30,7 @@ pipeline {
             steps {
                 script {
                     echo 'Building Docker Image...'
-                    sh 'docker build -t nashaat111/netflix-app:latest .'
+                    sh 'docker build -t nashaat111/netflix-app:1.0 .'
                 }
             }
         }
@@ -39,8 +39,7 @@ pipeline {
             steps {
                 script {
                     echo 'Pushing Docker Image to Registry...'
-                    sh 'docker login -u nashaat111 -p Nashaat123#'
-                    sh 'docker push nashaat111/netflix-app:latest'
+                    sh 'docker push nashaat111/netflix-app:1.0'
                 }
             }
         }
