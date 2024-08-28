@@ -1,28 +1,38 @@
+def gv
+
 pipeline {
     agent any
     stages {
-        stage('Build') {
+        stage("init") {
             steps {
                 script {
-                    dockerImage = docker.build("webapp:${env.BUILD_ID}")
+                    gv = load "script.groovy"
                 }
             }
         }
-        stage('Test') {
+        stage("build jar") {
             steps {
                 script {
-                    dockerImage.inside {
-                        sh 'make test'
-                    }
+                    echo "building jar1"
+                    //gv.buildJar()
                 }
             }
         }
-        stage('Deploy') {
+        stage("build image") {
             steps {
                 script {
-                    dockerImage.push()
+                    echo "building image"
+                    //gv.buildImage()
                 }
             }
         }
-    }
+        stage("deploy") {
+            steps {
+                script {
+                    echo "deploying"
+                    //gv.deployApp()
+                }
+            }
+        }
+    }   
 }
