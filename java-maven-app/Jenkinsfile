@@ -1,38 +1,55 @@
-def gv
+def gv // Define gv at the top level to make it accessible across stages
 
 pipeline {
     agent any
+
     stages {
         stage("init") {
             steps {
                 script {
+                    // Load the external Groovy script
                     gv = load "script.groovy"
                 }
             }
         }
-        stage("build jar") {
+
+        stage("Build JAR") {
             steps {
                 script {
-                    echo "building jar1"
-                    //gv.buildJar()
+                    echo "Building JAR..."
+                    gv.buildJar() // Call the buildJar() method from the loaded script
                 }
             }
         }
-        stage("build image") {
+
+        stage("Build Docker Image") {
             steps {
                 script {
-                    echo "building image"
-                    //gv.buildImage()
+                    echo "Building Docker image..."
+                    gv.buildImage() // Call the buildImage() method from the loaded script
                 }
             }
         }
-        stage("deploy") {
+
+        stage("Deploy Application") {
             steps {
                 script {
-                    echo "deploying"
-                    //gv.deployApp()
+                    echo "Deploying the application..."
+                    gv.deployApp() // Call the deployApp() method from the loaded script
                 }
             }
         }
-    }   
+    }
+
+    post {
+        always {
+            echo "Pipeline execution finished."
+        }
+        success {
+            echo "Pipeline succeeded."
+        }
+        failure {
+            echo "Pipeline failed."
+        }
+    }
 }
