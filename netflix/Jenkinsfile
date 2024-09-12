@@ -2,6 +2,15 @@ pipeline {
     agent any
 
     stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    // Checkout source code from the repository
+                    checkout scm
+                }
+            }
+        }
+
         stage('Build') {
             agent {
                 docker {
@@ -55,4 +64,3 @@ pipeline {
         }
     }
 }
-
