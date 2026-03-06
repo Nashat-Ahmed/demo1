@@ -1,0 +1,33 @@
+pipeline {
+
+    agent any
+
+    stages {
+
+        stage('Clone Repo') {
+            steps {
+                git 'https://github.com/YOUR_REPO/devops-project.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t nodeapp:latest ./app'
+            }
+        }
+
+        stage('Load Image to Kind') {
+            steps {
+                sh 'kind load docker-image nodeapp:latest'
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh 'kubectl apply -f kubernetes/'
+            }
+        }
+
+    }
+
+}
