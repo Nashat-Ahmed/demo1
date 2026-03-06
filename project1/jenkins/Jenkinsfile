@@ -1,5 +1,4 @@
 pipeline {
-
     agent any
 
     stages {
@@ -7,6 +6,16 @@ pipeline {
         stage('Clone Repo') {
             steps {
                 git 'https://github.com/Nashat-Ahmed/demo1.git'
+            }
+        }
+
+        stage('Stop Existing App') {
+            steps {
+                sh '''
+                echo "Stopping existing app..."
+                kubectl scale deployment nodeapp --replicas=0
+                kubectl delete pod -l app=nodeapp || true
+                '''
             }
         }
 
@@ -24,10 +33,13 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f kubernetes/'
+                sh '''
+                echo "Restarting app..."
+                kubectl scale deployment nodeapp --replicas=2
+                kubectl rollout status deployment nodeapp
+                '''
             }
         }
 
     }
-
 }
