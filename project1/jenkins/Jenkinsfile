@@ -1,45 +1,71 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = "nodeapp:latest"
+        K8S_DEPLOYMENT = "nodeapp"
+        K8S_NAMESPACE = "default"
+    }
+
     stages {
 
         stage('Clone Repo') {
             steps {
-                git 'https://github.com/Nashat-Ahmed/demo1.git'
+                git branch: 'main', url: 'https://github.com/Nashat-Ahmed/demo1.git'
             }
         }
 
         stage('Stop Existing App') {
             steps {
-                sh '''
-                echo "Stopping existing app..."
-                kubectl scale deployment nodeapp --replicas=0
-                kubectl delete pod -l app=nodeapp || true
-                '''
+                script {
+                    echo "Scaling down existing deployment..."
+                    sh """
+                        if kubectl get deployment ${K8S_DEPLOYMENT} -n ${K8S_NAMESPACE} >/dev/null 2>&1; then
+                            kubectl scale deployment ${K8S_DEPLOYMENT} --replicas=0 -n ${K8S_NAMESPACE}
+                            kubectl delete pod -l app=${K8S_DEPLOYMENT} -n ${K8S_NAMESPACE} || true
+                        else
+                            echo "Deployment does not exist, skipping stop."
+                        fi
+                    """
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t nodeapp:latest ./app'
+                sh "docker build -t ${DOCKER_IMAGE} ./project1/app"
             }
         }
 
         stage('Load Image to Kind') {
             steps {
-                sh 'kind load docker-image nodeapp:latest'
+                sh "kind load docker-image ${DOCKER_IMAGE}"
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                echo "Restarting app..."
-                kubectl scale deployment nodeapp --replicas=2
-                kubectl rollout status deployment nodeapp
-                '''
+                sh """
+                    if kubectl get deployment ${K8S_DEPLOYMENT} -n ${K8S_NAMESPACE} >/dev/null 2>&1; then
+                        echo "Updating deployment..."
+                        kubectl set image deployment/${K8S_DEPLOYMENT} ${K8S_DEPLOYMENT}=${DOCKER_IMAGE} -n ${K8S_NAMESPACE}
+                        kubectl rollout status deployment/${K8S_DEPLOYMENT} -n ${K8S_NAMESPACE}
+                    else
+                        echo "Creating deployment..."
+                        kubectl apply -f project1/kubernetes/
+                    fi
+                """
             }
         }
 
+    }
+
+    post {
+        success {
+            echo "Deployment finished successfully!"
+        }
+        failure {
+            echo "Deployment failed, check logs."
+        }
     }
 }
