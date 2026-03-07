@@ -39,7 +39,7 @@ pipeline {
 
         stage('Load Image to Kind') {
             steps {
-                sh "kind load docker-image ${DOCKER_IMAGE}"
+                sh "kind load docker-image ${DOCKER_IMAGE} --name devops-cluster"
             }
         }
 
