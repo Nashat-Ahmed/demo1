@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     environment {
+        KUBECONFIG = "/root/.kube/config"
         DOCKER_IMAGE = "nodeapp:latest"
         K8S_DEPLOYMENT = "nodeapp"
         K8S_NAMESPACE = "default"
