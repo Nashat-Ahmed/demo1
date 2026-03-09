@@ -52,7 +52,7 @@ pipeline {
                         kubectl rollout status deployment/${K8S_DEPLOYMENT} -n ${K8S_NAMESPACE}
                     else
                         echo "Creating deployment..."
-                        kubectl apply -f project1/kubernetes/
+                        kubectl apply -f project1/kubernetes/ --validate=false
                     fi
                 """
             }
