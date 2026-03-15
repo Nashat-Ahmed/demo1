@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        KUBECONFIG = "/var/lib/jenkins/.kube/config"
+        // Remove KUBECONFIG from environment or set it correctly
         IMAGE_NAME = "nodeapp"
         IMAGE_TAG = "${BUILD_NUMBER}"
         K8S_NAMESPACE = "default"
@@ -25,21 +25,29 @@ pipeline {
             }
         }
 
+        stage('Setup Kubernetes Context') {
+            steps {
+                sh """
+                echo "=== Setting up Kubernetes context ==="
+                # Copy kubeconfig from Jenkins home if needed
+                if [ -f /var/lib/jenkins/.kube/config ]; then
+                    mkdir -p ~/.kube
+                    cp /var/lib/jenkins/.kube/config ~/.kube/config
+                fi
+                
+                # Test connection
+                kubectl config view
+                kubectl config current-context
+                kubectl cluster-info || true
+                """
+            }
+        }
+
         stage('Load Image to Kind') {
             steps {
                 sh """
                 kind load docker-image ${IMAGE_NAME}:${IMAGE_TAG} --name devops-cluster
                 kind load docker-image ${IMAGE_NAME}:latest --name devops-cluster
-                """
-            }
-        }
-
-        stage('Verify Kubernetes Access') {
-            steps {
-                sh """
-                echo "=== Testing Kubernetes Access ==="
-                kubectl cluster-info
-                kubectl get nodes
                 """
             }
         }
@@ -65,7 +73,7 @@ pipeline {
         success {
             echo "Deployment finished successfully!"
             sh "kubectl get pods -n ${K8S_NAMESPACE} -l app=nodeapp"
-            sh "kubectl get services -n ${K8S_NAMESPACE}"
+            sh "kubectl get svc -n ${K8S_NAMESPACE}"
         }
 
         failure {
