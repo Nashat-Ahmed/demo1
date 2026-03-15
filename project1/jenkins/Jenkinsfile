@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        KUBECONFIG = "/root/.kube/config"
+        KUBECONFIG = "/var/lib/jenkins/.kube/config"  // Changed to Jenkins user's home
         IMAGE_NAME = "nodeapp"
         IMAGE_TAG = "${BUILD_NUMBER}"
         K8S_NAMESPACE = "default"
@@ -36,7 +36,15 @@ pipeline {
             steps {
                 sh """
                 sed -i 's|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${IMAGE_TAG}|g' project1/kubernetes/deployment.yml
+                
+                # Verify kubeconfig is accessible
+                echo "Testing kubectl access..."
+                kubectl cluster-info
+                
+                # Apply the deployment
                 kubectl apply -f project1/kubernetes/
+                
+                # Check rollout status
                 kubectl rollout status deployment/nodeapp -n ${K8S_NAMESPACE}
                 """
             }
@@ -47,6 +55,8 @@ pipeline {
     post {
         success {
             echo "Deployment finished successfully!"
+            // Optional: Get deployment details
+            sh "kubectl get pods -n ${K8S_NAMESPACE} -l app=nodeapp"
         }
 
         failure {
