@@ -20,6 +20,7 @@ pipeline {
             steps {
                 sh """
                 docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ./project1/app
+                docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
                 """
             }
         }
@@ -28,6 +29,7 @@ pipeline {
             steps {
                 sh """
                 kind load docker-image ${IMAGE_NAME}:${IMAGE_TAG} --name devops-cluster
+                kind load docker-image ${IMAGE_NAME}:latest --name devops-cluster
                 """
             }
         }
@@ -36,12 +38,8 @@ pipeline {
             steps {
                 sh """
                 echo "=== Testing Kubernetes Access ==="
-                echo "KUBECONFIG: \$KUBECONFIG"
-                echo "=== Kubeconfig contents (masked) ==="
-                cat \$KUBECONFIG | grep -v token | grep -v password
-                echo "=== Testing cluster access ==="
-                kubectl cluster-info || true
-                kubectl get nodes || true
+                kubectl cluster-info
+                kubectl get nodes
                 """
             }
         }
@@ -49,7 +47,8 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh """
-                sed -i 's|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${IMAGE_TAG}|g' project1/kubernetes/deployment.yml
+                # Update the image tag in deployment
+                sed -i 's|nodeapp:latest|${IMAGE_NAME}:${IMAGE_TAG}|g' project1/kubernetes/deployment.yml
                 
                 echo "=== Applying Kubernetes manifests ==="
                 kubectl apply -f project1/kubernetes/
@@ -66,6 +65,7 @@ pipeline {
         success {
             echo "Deployment finished successfully!"
             sh "kubectl get pods -n ${K8S_NAMESPACE} -l app=nodeapp"
+            sh "kubectl get services -n ${K8S_NAMESPACE}"
         }
 
         failure {
