@@ -5,6 +5,9 @@ pipeline {
         IMAGE_NAME = "nodeapp"
         IMAGE_TAG = "${BUILD_NUMBER}"
         K8S_NAMESPACE = "default"
+        KIND_CLUSTER_NAME = "kind"
+        DEPLOYMENT_FILE = "project1/kubernetes/deployment.yml"
+        SERVICE_FILE = "project1/kubernetes/service.yml"
     }
 
     stages {
@@ -16,54 +19,40 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh """
-                cd project1/app
-                docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
-                """
+                dir('project1/app') {
+                    sh '''
+                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
+                    '''
+                }
             }
         }
 
-        stage('Load Image to Kind') {
+        stage('Load Image into Kind') {
             steps {
-                sh """
-                kind load docker-image ${IMAGE_NAME}:${IMAGE_TAG} --name devops-cluster
-                kind load docker-image ${IMAGE_NAME}:latest --name devops-cluster
-                
-                # Verify image is loaded
-                echo "=== Images in Kind cluster ==="
-                docker exec devops-cluster-control-plane crictl images | grep nodeapp
-                """
+                sh '''
+                kind load docker-image ${IMAGE_NAME}:${IMAGE_TAG} --name ${KIND_CLUSTER_NAME}
+                kind load docker-image ${IMAGE_NAME}:latest --name ${KIND_CLUSTER_NAME}
+
+                echo "=== Verifying image load in kind ==="
+                docker exec ${KIND_CLUSTER_NAME}-control-plane crictl images | grep ${IMAGE_NAME} || true
+                '''
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh """
-                # Update deployment with new tag
-                sed -i 's|image: nodeapp:latest|image: nodeapp:${IMAGE_TAG}|g' project1/kubernetes/deployment.yml
-                
-                # Apply manifests
-                kubectl apply -f project1/kubernetes/
-                
-                # Wait for pods to be created
-                sleep 5
-                
-                # Show pod status
-                kubectl get pods -l app=nodeapp
-                
-                # Check if pods are running
-                READY=\$(kubectl get deployment nodeapp -o jsonpath='{.status.readyReplicas}')
-                if [ "\$READY" != "2" ]; then
-                    echo "=== Not all pods are ready. Checking logs ==="
-                    POD=\$(kubectl get pods -l app=nodeapp -o jsonpath='{.items[0].metadata.name}')
-                    kubectl logs \$POD
-                    kubectl describe pod \$POD
-                fi
-                
-                # Wait for rollout
+                sh '''
+                mkdir -p /tmp/jenkins-k8s
+                cp ${DEPLOYMENT_FILE} /tmp/jenkins-k8s/deployment.yml
+                sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_NAME}:${IMAGE_TAG}|g" /tmp/jenkins-k8s/deployment.yml
+
+                kubectl apply -n ${K8S_NAMESPACE} -f /tmp/jenkins-k8s/deployment.yml
+                kubectl apply -n ${K8S_NAMESPACE} -f ${SERVICE_FILE}
+
                 kubectl rollout status deployment/nodeapp -n ${K8S_NAMESPACE} --timeout=3m
-                """
+                kubectl get pods -n ${K8S_NAMESPACE} -l app=nodeapp
+                '''
             }
         }
     }
@@ -71,20 +60,20 @@ pipeline {
     post {
         success {
             echo "=== Deployment Successful ==="
-            sh """
-            kubectl get pods -l app=nodeapp
-            kubectl get svc
-            echo "Access your app at: http://localhost:30007"
-            """
+            sh '''
+            kubectl get pods -n ${K8S_NAMESPACE} -l app=nodeapp
+            kubectl get svc -n ${K8S_NAMESPACE}
+            echo "Access your app via the NodePort service or port-forward."
+            '''
         }
         failure {
             echo "=== Deployment Failed - Debug Information ==="
-            sh """
-            kubectl get events --sort-by='.lastTimestamp' | tail -20
-            kubectl describe deployment nodeapp
-            kubectl get pods -l app=nodeapp
-            kubectl logs -l app=nodeapp --tail=50
-            """
+            sh '''
+            kubectl get events -n ${K8S_NAMESPACE} --sort-by='.lastTimestamp' | tail -20
+            kubectl describe deployment nodeapp -n ${K8S_NAMESPACE}
+            kubectl get pods -n ${K8S_NAMESPACE} -l app=nodeapp
+            kubectl logs -n ${K8S_NAMESPACE} -l app=nodeapp --tail=50
+            '''
         }
     }
 }
